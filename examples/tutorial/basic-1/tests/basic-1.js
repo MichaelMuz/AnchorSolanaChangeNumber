@@ -9,6 +9,9 @@ describe("basic-1", () => {
   // Configure the client to use the local cluster.
   anchor.setProvider(provider);
 
+  let _myAccount = anchor.web3.Keypair.generate();
+  
+
   it("Creates and initializes an account in a single atomic transaction (simplified)", async () => {
     // #region code-simplified
     // The program to execute.
@@ -19,7 +22,7 @@ describe("basic-1", () => {
 
     // Create the new account and initialize it with the program.
     // #region code-simplified
-    await program.rpc.initialize(new anchor.BN(1234), {
+    await program.rpc.initialize({
       accounts: {
         myAccount: myAccount.publicKey,
         user: provider.wallet.publicKey,
@@ -33,13 +36,13 @@ describe("basic-1", () => {
     const account = await program.account.myAccount.fetch(myAccount.publicKey);
 
     // Check it's state was initialized.
-    assert.ok(account.data.eq(new anchor.BN(1234)));
+    assert.equal(account.data, 0);
 
     // Store the account for the next test.
     _myAccount = myAccount;
   });
 
-  it("Updates a previously created account", async () => {
+  it("increments a previously created account", async () => {
     const myAccount = _myAccount;
 
     // #region update-test
@@ -48,7 +51,7 @@ describe("basic-1", () => {
     const program = anchor.workspace.Basic1;
 
     // Invoke the update rpc.
-    await program.rpc.update(new anchor.BN(4321), {
+    await program.rpc.increment({
       accounts: {
         myAccount: myAccount.publicKey,
       },
@@ -58,7 +61,56 @@ describe("basic-1", () => {
     const account = await program.account.myAccount.fetch(myAccount.publicKey);
 
     // Check it's state was mutated.
-    assert.ok(account.data.eq(new anchor.BN(4321)));
+    assert.equal(account.data, 1);
+
+    // #endregion update-test
+  });
+
+
+  it("decrements a previously created account", async () => {
+    const myAccount = _myAccount;
+
+    // #region update-test
+
+    // The program to execute.
+    const program = anchor.workspace.Basic1;
+
+    // Invoke the update rpc.
+    await program.rpc.decrement({
+      accounts: {
+        myAccount: myAccount.publicKey,
+      },
+    });
+
+    // Fetch the newly updated account.
+    const account = await program.account.myAccount.fetch(myAccount.publicKey);
+
+    // Check it's state was mutated.
+    assert.equal(account.data, 0);
+
+    // #endregion update-test
+  });
+
+  it("sets a previously created account", async () => {
+    const myAccount = _myAccount;
+
+    // #region update-test
+
+    // The program to execute.
+    const program = anchor.workspace.Basic1;
+
+    // Invoke the update rpc.
+    await program.rpc.set(new anchor.BN(100), {
+      accounts: {
+        myAccount: myAccount.publicKey,
+      },
+    });
+
+    // Fetch the newly updated account.
+    const account = await program.account.myAccount.fetch(myAccount.publicKey);
+
+    // Check it's state was mutated.
+    assert.equal(account.data, 100);
 
     // #endregion update-test
   });
